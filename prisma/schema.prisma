@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlanType {
+  free
+  pro
+  enterprise
+}
+
+enum SubscriptionStatus {
+  inactive
+  active
+  cancelled
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  // Subscription fields
+  planType              PlanType           @default(free)
+  subscriptionStatus    SubscriptionStatus @default(inactive)
+  paymentProvider       String?
+  paymentSubscriptionId String?
+
+  // Relations
+  documents     Document[]
+  chunks        Chunk[]
+  questionLogs  QuestionLog[]
+  conversations Conversation[]
+
+  @@map("users")
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String
+  fileType   String
+  fileSize   Int      @default(0)
+  chunkCount Int      @default(0)
+  summary    String?
+  uploadedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks Chunk[]
+
+  @@index([userId])
+  @@map("documents")
+}
+
+model Chunk {
+  id          String   @id @default(cuid())
+  documentId  String
+  userId      String
+  content     String
+  embeddingId String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([userId])
+  @@map("chunks")
+}
+
+model QuestionLog {
+  id         String   @id @default(cuid())
+  userId     String
+  question   String
+  answer     String
+  sources    Json?
+  tokenUsage Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("question_logs")
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           String
+  content        String
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("messages")
+}
