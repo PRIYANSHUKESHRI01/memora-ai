@@ -35,7 +35,7 @@ export function UpgradeButton({
 
             // Redirect to PayPal approval page
             if (data.approvalUrl) {
-                window.location.href = data.approvalUrl;
+                window.open(data.approvalUrl, "_blank");
             } else {
                 throw new Error("No approval URL received");
             }

@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
                         subscriptionStatus: SubscriptionStatus.active,
                         paymentProvider: "paypal",
                         paymentSubscriptionId: subscriptionId,
+                        subscriptionCreatedAt: new Date(),
                     },
                 });
 
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
                             data: {
                                 subscriptionStatus: SubscriptionStatus.cancelled,
                                 planType: PlanType.free,
+                                subscriptionEndsAt: new Date(),
                             },
                         });
                         console.log(`[WEBHOOK] User ${user.id} subscription ${eventType.split(".").pop()?.toLowerCase()}`);
@@ -103,6 +105,7 @@ export async function POST(req: NextRequest) {
                     data: {
                         subscriptionStatus: SubscriptionStatus.cancelled,
                         planType: PlanType.free,
+                        subscriptionEndsAt: new Date(),
                     },
                 });
 

@@ -1,11 +1,28 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { UpgradeButton } from "@/components/UpgradeButton";
-import { Check, Sparkles, Crown, Zap } from "lucide-react";
+import { Check, Sparkles, Crown, Zap, Shield, CheckCircle2 } from "lucide-react";
 
 const PLANS = [
+    {
+        id: "free" as const,
+        name: "Free",
+        price: "$0",
+        period: "",
+        icon: Shield,
+        description: "Perfect for trying out Memora AI",
+        gradient: "from-zinc-500 to-zinc-600",
+        glowColor: "zinc",
+        features: [
+            "Upload files up to 2 MB",
+            "Up to 10 pages per document",
+            "10 questions per day",
+            "Basic semantic search",
+            "Document summaries",
+        ],
+    },
     {
         id: "pro" as const,
         name: "Pro",
@@ -18,7 +35,7 @@ const PLANS = [
         features: [
             "Upload files up to 10 MB",
             "Up to 50 pages per document",
-            "100 questions per day",
+            "50 questions per day",
             "Priority processing",
             "Advanced analytics",
         ],
@@ -54,16 +71,47 @@ export default function UpgradePage() {
 
 function UpgradeContent() {
     const searchParams = useSearchParams();
-    const isSuccess = searchParams.get("success") === "true";
     const isCancelled = searchParams.get("cancelled") === "true";
 
+    const [currentPlan, setCurrentPlan] = useState<string>("free");
+    const [subscriptionStatus, setSubscriptionStatus] = useState<string>("inactive");
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadSubscription() {
+            try {
+                const res = await fetch("/api/user/subscription", { credentials: "include" });
+                if (res.ok) {
+                    const data = await res.json();
+                    setCurrentPlan(data.planType || "free");
+                    setSubscriptionStatus(data.subscriptionStatus || "inactive");
+                }
+            } catch (err) {
+                console.error("Failed to load subscription:", err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadSubscription();
+    }, []);
+
+    const currentPlanLabel =
+        currentPlan === "enterprise" ? "Enterprise"
+            : currentPlan === "pro" ? "Pro"
+                : "Free";
+
+    const currentPlanLimits =
+        currentPlan === "enterprise" ? "50 MB uploads, 200 pages, Unlimited questions"
+            : currentPlan === "pro" ? "10 MB uploads, 50 pages, 50 questions/day"
+                : "2 MB uploads, 10 pages, 10 questions/day";
+
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
             {/* Header */}
             <div className="text-center mb-12">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-6">
                     <Sparkles className="w-3.5 h-3.5" />
-                    Upgrade Your Plan
+                    Manage Your Plan
                 </div>
                 <h1 className="text-3xl lg:text-4xl font-bold text-zinc-100 mb-3">
                     Unlock the full power of{" "}
@@ -75,49 +123,58 @@ function UpgradeContent() {
                 </p>
             </div>
 
-            {/* Success / Cancel banners */}
-            {isSuccess && (
-                <div className="mb-8 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm text-center animate-fade-in">
-                    <strong>Payment submitted!</strong> Your subscription is being
-                    processed. Your plan will be activated shortly once PayPal confirms
-                    the payment.
-                </div>
-            )}
-
             {isCancelled && (
-                <div className="mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm text-center animate-fade-in">
+                <div className="mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm text-center">
                     Payment was cancelled. You can try again whenever you&apos;re ready.
                 </div>
             )}
 
-            {/* Free tier info */}
-            <div className="mb-8 glass-card p-5 text-center">
-                <p className="text-zinc-400 text-sm">
-                    You&apos;re currently on the{" "}
-                    <span className="text-zinc-200 font-medium">Free plan</span> — 2 MB
-                    uploads, 10 pages, 10 questions/day.
-                </p>
-            </div>
+            {/* Current plan info */}
+            {!loading && (
+                <div className="mb-8 bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-5 text-center">
+                    <p className="text-zinc-400 text-sm">
+                        You&apos;re currently on the{" "}
+                        <span className="text-zinc-200 font-medium">{currentPlanLabel} plan</span>
+                        {" "}— {currentPlanLimits}
+                    </p>
+                </div>
+            )}
 
             {/* Plan cards */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
                 {PLANS.map((plan) => {
                     const Icon = plan.icon;
+                    const isCurrentPlan = plan.id === currentPlan && subscriptionStatus === "active";
+                    const isFreeAndCurrent = plan.id === "free" && currentPlan === "free";
+                    const isDowngrade =
+                        (currentPlan === "enterprise" && (plan.id === "pro" || plan.id === "free")) ||
+                        (currentPlan === "pro" && plan.id === "free");
+                    const showUpgrade = !isFreeAndCurrent && !isCurrentPlan && !isDowngrade && plan.id !== "free";
+
                     return (
                         <div
                             key={plan.id}
                             className={`
-                relative glass-card p-6 flex flex-col
-                transition-all duration-300
-                hover:border-${plan.glowColor}-500/30
-                ${plan.popular ? "ring-1 ring-violet-500/30" : ""}
-              `}
+                                relative rounded-2xl p-6 flex flex-col
+                                bg-zinc-900/60 border backdrop-blur-md
+                                transition-all duration-300
+                                ${isCurrentPlan || isFreeAndCurrent
+                                    ? "border-emerald-500/30 ring-1 ring-emerald-500/20"
+                                    : plan.popular && showUpgrade
+                                        ? "border-violet-500/30 ring-1 ring-violet-500/20"
+                                        : "border-zinc-800/60 hover:border-zinc-700/60"
+                                }
+                            `}
                         >
-                            {plan.popular && (
+                            {isCurrentPlan || isFreeAndCurrent ? (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-emerald-500 text-[10px] font-bold uppercase tracking-wider text-white">
+                                    Current Plan
+                                </div>
+                            ) : plan.popular && showUpgrade ? (
                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[10px] font-bold uppercase tracking-wider text-white">
                                     Most Popular
                                 </div>
-                            )}
+                            ) : null}
 
                             {/* Plan header */}
                             <div className="mb-6">
@@ -135,7 +192,9 @@ function UpgradeContent() {
                                 <span className="text-3xl font-bold text-zinc-100">
                                     {plan.price}
                                 </span>
-                                <span className="text-zinc-500 text-sm">{plan.period}</span>
+                                {plan.period && (
+                                    <span className="text-zinc-500 text-sm">{plan.period}</span>
+                                )}
                             </div>
 
                             {/* Features */}
@@ -152,7 +211,21 @@ function UpgradeContent() {
                             </ul>
 
                             {/* CTA */}
-                            <UpgradeButton plan={plan.id} />
+                            {isCurrentPlan || isFreeAndCurrent ? (
+                                <div className="w-full py-3 px-6 rounded-xl font-semibold text-sm text-center
+                                    border border-emerald-500/30 text-emerald-400 bg-emerald-500/5
+                                    flex items-center justify-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Current Plan
+                                </div>
+                            ) : showUpgrade ? (
+                                <UpgradeButton plan={plan.id as "pro" | "enterprise"} />
+                            ) : (
+                                <div className="w-full py-3 px-6 rounded-xl font-semibold text-sm text-center
+                                    border border-zinc-700/50 text-zinc-600 cursor-not-allowed">
+                                    {plan.id === "free" ? "Free Tier" : "Included in your plan"}
+                                </div>
+                            )}
                         </div>
                     );
                 })}
@@ -166,4 +239,3 @@ function UpgradeContent() {
         </div>
     );
 }
-

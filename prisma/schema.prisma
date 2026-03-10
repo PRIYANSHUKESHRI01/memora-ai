@@ -31,6 +31,8 @@ model User {
   subscriptionStatus    SubscriptionStatus @default(inactive)
   paymentProvider       String?
   paymentSubscriptionId String?
+  subscriptionCreatedAt DateTime?
+  subscriptionEndsAt    DateTime?
 
   // Relations
   documents     Document[]

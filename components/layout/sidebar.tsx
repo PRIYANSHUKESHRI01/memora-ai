@@ -9,6 +9,7 @@ import {
     Database,
     MessageSquare,
     Settings,
+    Sparkles,
     Menu,
     X,
     LogOut,
@@ -21,6 +22,7 @@ const navItems = [
     { label: "Upload", href: "/upload", icon: Upload },
     { label: "Memory", href: "/memory", icon: Database },
     { label: "Ask AI", href: "/ask", icon: MessageSquare },
+    { label: "Upgrade", href: "/upgrade", icon: Sparkles },
     { label: "Settings", href: "/settings", icon: Settings },
 ];
 

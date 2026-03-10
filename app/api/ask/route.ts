@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { askQuestion } from "@/lib/ai/ask-engine";
 import { addMessage } from "@/lib/chat/message-service";
 import { getConversation } from "@/lib/chat/conversation-service";
+import { checkQuestionLimit } from "@/lib/subscription";
 
 const askSchema = z.object({
     question: z.string().min(1).max(1000),
@@ -49,6 +50,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(
                 { error: "Conversation not found" },
                 { status: 404 }
+            );
+        }
+
+        // Check daily question limit (plan-based)
+        const questionCheck = await checkQuestionLimit(dbUser.id);
+        if (!questionCheck.allowed) {
+            return NextResponse.json(
+                { error: questionCheck.reason },
+                { status: 429 }
             );
         }
 

@@ -8,7 +8,8 @@ export async function middleware(request: NextRequest) {
         request.nextUrl.pathname.startsWith("/upload") ||
         request.nextUrl.pathname.startsWith("/ask") ||
         request.nextUrl.pathname.startsWith("/memory") ||
-        request.nextUrl.pathname.startsWith("/settings");
+        request.nextUrl.pathname.startsWith("/settings") ||
+        request.nextUrl.pathname.startsWith("/upgrade");
 
     // Update session expiration if valid
     const sessionResponse = await updateSession(request);

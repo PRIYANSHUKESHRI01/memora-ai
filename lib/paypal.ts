@@ -160,3 +160,42 @@ export async function verifyWebhookSignature(
     const data = await res.json();
     return data.verification_status === "SUCCESS";
 }
+
+// ─── Get Subscription Details ───────────────────────────────
+
+export interface PayPalSubscriptionDetails {
+    id: string;
+    status: string;
+    plan_id: string;
+    custom_id?: string;
+    create_time: string;
+}
+
+export async function getPayPalSubscription(
+    subscriptionId: string
+): Promise<PayPalSubscriptionDetails | null> {
+    try {
+        const token = await getPayPalAccessToken();
+
+        const res = await fetch(
+            `${PAYPAL_BASE}/v1/billing/subscriptions/${subscriptionId}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                },
+            }
+        );
+
+        if (!res.ok) {
+            console.error("[PAYPAL] Get subscription failed:", res.status);
+            return null;
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error("[PAYPAL] Get subscription error:", error);
+        return null;
+    }
+}

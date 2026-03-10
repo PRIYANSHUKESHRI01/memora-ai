@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
 
         // 4. Build return/cancel URLs
         const origin = req.nextUrl.origin;
-        const returnUrl = `${origin}/dashboard?success=true`;
-        const cancelUrl = `${origin}/upgrade?cancelled=true`;
+        const returnUrl = `${origin}/dashboard?payment=success`;
+        const cancelUrl = `${origin}/pricing?cancelled=true`;
 
         // 5. Create subscription via PayPal API
         const result = await createPayPalSubscription({

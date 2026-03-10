@@ -6,6 +6,7 @@ import { generateEmbedding } from "@/lib/ai/embedding";
 import { upsertVectors } from "@/lib/vector/vector-client";
 import { summarizeText } from "@/lib/ai/summarizer";
 import { extractPDFText, MAX_PDF_SIZE, MAX_PDF_PAGES } from "@/lib/pdf/extract-hybrid";
+import { getUserPlanLimits } from "@/lib/subscription";
 
 export async function POST(req: NextRequest) {
     try {
@@ -33,10 +34,12 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Validate file size
-        if (file.size > MAX_PDF_SIZE) {
+        // Validate file size (plan-based)
+        const planLimits = await getUserPlanLimits(userId);
+        const fileSizeMB = file.size / (1024 * 1024);
+        if (fileSizeMB > planLimits.maxUploadSizeMB) {
             return NextResponse.json(
-                { error: "File exceeds 2MB limit." },
+                { error: `File exceeds ${planLimits.maxUploadSizeMB}MB limit for your plan. Upgrade for larger uploads.` },
                 { status: 400 }
             );
         }

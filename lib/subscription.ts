@@ -55,7 +55,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     [PlanType.pro]: {
         maxUploadSizeMB: 10,
         maxPages: 50,
-        maxQuestionsPerDay: 100,
+        maxQuestionsPerDay: 50,
     },
     [PlanType.enterprise]: {
         maxUploadSizeMB: 50,
